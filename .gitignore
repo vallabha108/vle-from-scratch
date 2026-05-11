@@ -1,0 +1,43 @@
+# deps
+node_modules/
+.pnp
+.pnp.js
+
+# next
+.next/
+out/
+build/
+dist/
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IaC
+.pulumi/
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# test
+coverage/
+playwright-report/
+test-results/
