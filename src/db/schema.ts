@@ -1,11 +1,14 @@
 /**
- * Drizzle schema — multi-tenant core.
+ * Drizzle schema — multi-tenant core + Auth.js v5 tables.
  *
  * Design rules (read before adding tables):
  *
  *   1. EVERY non-root table carries `tenantId` either directly or through a
  *      parent that obviously does. The `tenantId` column is the single
  *      most important field in this schema.
+ *      EXCEPTION: Auth.js bookkeeping tables (accounts, sessions,
+ *      verificationTokens) are owned by the auth library and have no
+ *      tenant — they describe identity, not domain data.
  *
  *   2. CUIDs are stored as text. We don't use serial / bigserial — they
  *      leak business volume.
@@ -18,6 +21,12 @@
  *
  *   5. Add an index for every column you `WHERE` on. Multi-tenant apps
  *      that forget this are slow in week 2.
+ *
+ *   6. `users.tenantId` is NULLABLE: Auth.js inserts users before we know
+ *      which tenant they belong to. A post-signin event resolves the
+ *      tenant from the email domain (see src/auth.ts). Application code
+ *      that reads domain data MUST treat a null tenantId as "not yet
+ *      assigned" and reject the request.
  */
 import { sql } from "drizzle-orm";
 import {
@@ -26,10 +35,12 @@ import {
   text,
   integer,
   timestamp,
+  primaryKey,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
+import type { AdapterAccountType } from "next-auth/adapters";
 
 // --- Enums -----------------------------------------------------------------
 
@@ -41,7 +52,7 @@ export const roleEnum = pgEnum("role", [
   "SUPER_ADMIN",
 ]);
 
-// --- Tables ---------------------------------------------------------------
+// --- Domain tables ---------------------------------------------------------
 
 export const tenants = pgTable(
   "tenants",
@@ -67,11 +78,15 @@ export const users = pgTable(
   "users",
   {
     id: text("id").primaryKey().$defaultFn(() => createId()),
-    tenantId: text("tenant_id")
-      .notNull()
-      .references(() => tenants.id, { onDelete: "cascade" }),
+    // NULLABLE on purpose — Auth.js inserts before tenant resolution.
+    tenantId: text("tenant_id").references(() => tenants.id, {
+      onDelete: "cascade",
+    }),
     email: text("email").notNull(),
-    name: text("name").notNull(),
+    // Auth.js fields. emailVerified is set when the magic link is clicked.
+    emailVerified: timestamp("email_verified", { withTimezone: true }),
+    name: text("name").notNull().default(""),
+    image: text("image"),
     role: roleEnum("role").notNull().default("LEARNER"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -160,7 +175,54 @@ export const modules = pgTable(
   }),
 );
 
-// --- TS helper types for the rest of the app to import --------------------
+// --- Auth.js v5 tables (owned by @auth/drizzle-adapter) -------------------
+//
+// Column names follow the adapter's defaults exactly. Renaming requires a
+// custom adapter map — not worth it.
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").$type<AdapterAccountType>().notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.provider, t.providerAccountId] }),
+  }),
+);
+
+export const sessions = pgTable("sessions", {
+  sessionToken: text("sessionToken").primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { withTimezone: true }).notNull(),
+});
+
+export const verificationTokens = pgTable(
+  "verificationToken",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.identifier, t.token] }),
+  }),
+);
+
+// --- Helpers --------------------------------------------------------------
 
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
@@ -170,5 +232,6 @@ export type Program = typeof programs.$inferSelect;
 export type Week = typeof weeks.$inferSelect;
 export type Module = typeof modules.$inferSelect;
 
-/** Every table we own, in dependency order — used by tests + tooling. */
+/** Domain tables in dependency order. Auth.js tables are excluded — they
+ *  are not domain data and the invariant rules do not apply. */
 export const ALL_TABLES = [tenants, users, programs, weeks, modules] as const;

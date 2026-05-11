@@ -66,8 +66,26 @@ first regression happens. (Track C will add tests in its Phase C3.)
   they ship.
 
 ### lesson-03 — Auth
-- _Will compare Firebase Auth (vallabha_vle) vs Auth.js v5 magic-link
-  (vle-from-scratch) on: setup friction, prod cost, vendor lock-in, UX._
+
+| Concern | vallabha_vle (Firebase Auth) | vle-from-scratch (Auth.js v5) | Evidence |
+|---|---|---|---|
+| Identity storage | Firebase Auth (vendor) | rows in your own Postgres | **Track A wins** on portability + backup story |
+| Two stores to keep in sync | Firebase + DB User | one users table | Track A removes a whole bug class (PITFALLS §6 in vallabha_vle) |
+| Session model | ID token → server-created `__session` cookie | DB session row + opaque cookie | Track A wins on instant revocation |
+| Failure chain length | 4 steps (form→FB→verify→DB) | 1 chain (form→DB→cookie) | Track A wins for debuggability |
+| MFA / SMS | first-class (Firebase) | needs extra work | Firebase wins if you need this |
+| Cost at small scale | per-MAU | tiny (DB rows + email sends) | Track A wins on free tier |
+| Dev onboarding | requires Firebase web config | console magic link, zero signup | **Track A wins decisively for teaching** |
+| Tenant assignment | manual (admin creates DB row after FB signup) | automatic via `events.createUser` (email domain → tenant) | Track A reduces support load |
+
+**Verdict (lesson-03):**
+- For **teaching**, Auth.js is overwhelmingly better — no third-party
+  signup, no two-store sync to explain, console magic links Just Work.
+- For **production**, Auth.js is the right default unless you specifically
+  need Firebase's MFA/SMS or already invested in the Firebase ecosystem.
+- Concrete proposal for vallabha_vle (Track C, future phase): factor the
+  Firebase Auth → DB User sync into a single trusted helper, so the
+  current four-step failure chain collapses into one.
 
 ### lesson-04..lesson-10
 - _to be filled_

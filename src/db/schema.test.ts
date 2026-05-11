@@ -21,7 +21,8 @@ const columnNames = (table: any): string[] =>
 
 describe("schema invariants", () => {
   it("every non-tenants table has a tenant scope (direct or via parent)", () => {
-    // Direct tenantId
+    // Direct tenantId (users is nullable: Auth.js inserts before tenant
+    // resolution; see schema.ts §6).
     expect(columnNames(users)).toContain("tenant_id");
     expect(columnNames(programs)).toContain("tenant_id");
     expect(columnNames(modules)).toContain("tenant_id");
