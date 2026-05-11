@@ -30,8 +30,19 @@ where we have empirical evidence — which choice we'd actually pick.
 - Verdict: for **production** a fast initial commit is fine. For
   **teaching** the lesson-tag approach is non-negotiable.
 
-### lesson-01 — Next.js + Tailwind + Shadcn
-- _to be filled after lesson-01 lands_
+### lesson-01 — Next.js + Tailwind + Shadcn + Vitest
+
+| Concern | vallabha_vle | vle-from-scratch | Evidence |
+|---|---|---|---|
+| Scaffold delivery | 13K LOC in one commit (`672a47b`) | ~150 LOC, plus tests, in `lesson-01` | velocity vs. teach-ability — both valid |
+| Tests | none at any commit | 1 unit test (`Lessons.test.tsx`) from lesson-01 | **Track A wins for teaching** — early tests catch regressions in roadmap data |
+| Dark mode | added in commit 9 (`89ebb0b`) | day-one via `prefers-color-scheme` | trivial in greenfield, retrofit-cost in prod |
+| Standalone output | enabled later when Dockerising | enabled at lesson-01 | no surprise refactor in lesson-07 |
+
+**Verdict (lesson-01):** for *teaching*, the slow-lesson approach wins
+clearly. For *shipping*, the big-initial-commit approach is faster and
+the lack of upfront tests is defensible **if** you add them when the
+first regression happens. (Track C will add tests in its Phase C3.)
 
 ### lesson-02 — Schema & ORM
 - _Will compare Drizzle's SQL-first schema files vs Prisma's `schema.prisma`
