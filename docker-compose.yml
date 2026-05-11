@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vle-from-scratch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vle
+      POSTGRES_PASSWORD: vle
+      POSTGRES_DB: vle_dev
+    ports:
+      # 55432 on host -> 5432 in container. Avoids clash with a host-native
+      # Postgres (Homebrew/Postgres.app commonly squat 5432). Update
+      # .env.example and DATABASE_URL to match this port.
+      - "55432:5432"
+    volumes:
+      - vle_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vle -d vle_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  vle_pg_data:

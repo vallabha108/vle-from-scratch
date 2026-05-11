@@ -45,8 +45,25 @@ the lack of upfront tests is defensible **if** you add them when the
 first regression happens. (Track C will add tests in its Phase C3.)
 
 ### lesson-02 — Schema & ORM
-- _Will compare Drizzle's SQL-first schema files vs Prisma's `schema.prisma`
-  DSL once both exist side-by-side._
+
+| Concern | vallabha_vle (Prisma) | vle-from-scratch (Drizzle) | Evidence |
+|---|---|---|---|
+| Definition language | `schema.prisma` DSL | TS w/ `pgTable()` | Drizzle reads like SQL you'd have written anyway |
+| ID strategy | `cuid()` | `cuid2` | both opaque; cuid2 is the newer drop-in |
+| Migration files | none (push only) | both supported: `db:push` + `db:generate` produces SQL in `drizzle/` | **Track A wins for review-ability** — generated SQL is grep-able |
+| Tenant-scope safety | convention | convention + 4 invariant unit tests | first concrete proof that Track A's "tests from day one" rule helps |
+| Studio | `prisma studio` | `drizzle-kit studio` | tied — both fine |
+| Bundle weight (server) | ~2 MB Prisma client + binary engine | ~250 KB drizzle-orm | matters for Cloud Run cold start (lesson-07) |
+| Required Postgres port | 5432 (host) | 55432 (host) | Track A learned the Postgres.app collision the hard way; doc'd in lesson README |
+
+**Verdict (lesson-02):**
+- For **teaching**, Drizzle wins clearly — students see SQL, the
+  schema-as-code is one file, and invariant tests are trivial to write.
+- For **shipping**, Prisma's faster onboarding is real and probably worth
+  it if the team isn't comfortable with SQL.
+- The new finding for vallabha_vle: **add schema-invariant unit tests** —
+  cost = ~50 LOC, value = catching tenant-scope refactor errors before
+  they ship.
 
 ### lesson-03 — Auth
 - _Will compare Firebase Auth (vallabha_vle) vs Auth.js v5 magic-link

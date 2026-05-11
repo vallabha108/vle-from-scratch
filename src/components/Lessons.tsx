@@ -7,8 +7,8 @@ export type Lesson = {
 export const LESSONS: Lesson[] = [
   { tag: "lesson-00", title: "Project framing & docs", status: "done" },
   { tag: "lesson-01", title: "Next.js 14 + Tailwind + Shadcn + Vitest", status: "done" },
-  { tag: "lesson-02", title: "Drizzle schema for multi-tenancy", status: "next" },
-  { tag: "lesson-03", title: "Auth.js v5 email magic-link", status: "planned" },
+  { tag: "lesson-02", title: "Drizzle schema for multi-tenancy", status: "done" },
+  { tag: "lesson-03", title: "Auth.js v5 email magic-link", status: "next" },
   { tag: "lesson-04", title: "RBAC + scoped middleware", status: "planned" },
   { tag: "lesson-05", title: "Learner UX: dashboard, weekly plan, modules", status: "planned" },
   { tag: "lesson-06", title: "Progress tracking + telemetry", status: "planned" },
